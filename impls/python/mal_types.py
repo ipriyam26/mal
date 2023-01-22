@@ -1,16 +1,38 @@
+import types
+import sys
 class MalExceptions(Exception):
     def __init__(self, message):
         self.message = message
+        
+_u = lambda x: x
+_s2u = lambda x: x
+str_types = [str] if sys.version_info[0] >= 3 else [str, unicode]
 
+#Scalars
+def _is_nil(exp):    return exp is None
+def _is_true(exp):   return exp is True
+def _is_false(exp):  return exp is False
+def _is_string(exp):
+    return len(exp) == 0 if type(exp) in str_types else False
+
+def _number(exp): return type(exp) == int
+
+
+# Symbols
+class Symbol(str): pass
+def _symbol(str): return Symbol(str)
+def _is_symbol(exp): return type(exp) == Symbol
 
 # keyword
 def _keyword(string):
-    return "\u029e" + string if string[0] != "\u029e" else string
+    if not string:
+        raise MalExceptions("keyword cannot be empty")
+    return _u("\u029e")+string if string[0] !=_u("\u029e") else string
 
 
 # check if its a keyword
-def _keyword_check(string):
-    return type(string) == str and len(string) != 0 and string[0] == "\u029e"
+def _is_keyword(string):
+    return type(string) == str and len(string) != 0 and string[0] == _u("\u029e")
 
 
 class List(list):
@@ -28,7 +50,7 @@ def _list(*vals):
     return List(vals)
 
 
-def _list_check(exp):
+def _is_list(exp):
     return type(exp) == List
 
 
@@ -53,7 +75,7 @@ def _vector(*vals):
     return Vector(vals)
 
 
-def _vector_check(exp):
+def _is_vector(exp):
     return type(exp) == Vector
 
 
@@ -70,7 +92,7 @@ def _hash_map(*args):
     return hm
 
 
-def _hash_map_check(exp):
+def _hash_is_map(exp):
     return type(exp) == HashMap
 
 
@@ -84,7 +106,7 @@ def _atom(val):
     return Atom(val)
 
 
-def _atom_Q(exp):
+def _is_atom(exp):
     return type(exp) == Atom
 
 

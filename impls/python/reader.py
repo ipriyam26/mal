@@ -1,4 +1,5 @@
 import re
+from mal_types import _list, _vector, _hash_map, _keyword, _symbol, _u
 
 
 class Reader:
@@ -26,22 +27,11 @@ def read_str(string: str):
 
 
 def tokenize(string: str):
-    # [\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)
+
     tre = re.compile(
         r"""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:[\\].|[^\\"])*"?|;.*|[^\s\[\]{}()'"`@,;]+)"""
     )
     return [t for t in re.findall(tre, string) if t[0] != ";"]
-
-
-def read_list(reader: Reader):
-    current_tokens = []
-    reader.next()
-    # if it reaches EOF before closing the list it should throw an error
-    while reader.peek() != ")":
-        current_tokens.append(read_form(reader))
-        # reader.next()
-    reader.next()
-    return current_tokens
 
 
 def read_atom(reader: Reader):
@@ -55,6 +45,9 @@ def read_atom(reader: Reader):
         return float(token)
     elif string_regex.match(token):
         return escape_string(token[1:-1])
+
+    elif token[0] == ":":
+        return _keyword(token[1:])
     elif token[0] == '"':
         raise SyntaxError("unbalanced '\"'")
     elif token == "nil":
@@ -64,25 +57,97 @@ def read_atom(reader: Reader):
     elif token == "false":
         return False
     else:
-        return token
+        return _symbol(token)
 
 
 def escape_string(string: str):
     return (
-        string.replace("\\\\", "\u029e")
+        string.replace("\\\\", _u("\u029e"))
         .replace('\\"', '"')
         .replace("\\n", "\n")
         # .replace('\\\\')
-        .replace("\u029e", "\\")
+        .replace(_u("\u029e"), "\\")
     )
 
 
-def read_form(reader: Reader):
+def read_sequence(
+    reader: Reader,
+    data_type=list,
+    start: str = "(",
+    end: str = ")",
+):
+    abstract_syntax_tree = data_type()
+    token = reader.next()
+    if token != start:
+        raise SyntaxError(f"expected '{start}' but got {token}")
+    # is not lets look at the next character
     token = reader.peek()
-    if token == "(":
-        # reader.next()
-        return read_list(reader)
+    while token != end:
+        if not token:
+            raise SyntaxError(f"expected '{end}', got EOF")
+        abstract_syntax_tree.append(read_form(reader))
+        token = reader.peek()
+    reader.next()
+    return abstract_syntax_tree
+
+
+def read_hash_map(reader):
+    lst = read_sequence(reader, list, "{", "}")
+    return _hash_map(*lst)
+
+
+def read_list(reader):
+    return read_sequence(reader, _list, "(", ")")
+
+
+def read_vector(reader):
+    return read_sequence(reader, _vector, "[", "]")
+
+
+def read_form(reader):
+    token = reader.peek()
+    # reader macros/transforms
+    if token[0] == ";":
+        reader.next()
+        return None
+    elif token == "'":
+        reader.next()
+        return _list(_symbol("quote"), read_form(reader))
+    elif token == "`":
+        reader.next()
+        return _list(_symbol("quasiquote"), read_form(reader))
+    elif token == "~":
+        reader.next()
+        return _list(_symbol("unquote"), read_form(reader))
+    elif token == "~@":
+        reader.next()
+        return _list(_symbol("splice-unquote"), read_form(reader))
+    elif token == "^":
+        reader.next()
+        meta = read_form(reader)
+        return _list(_symbol("with-meta"), read_form(reader), meta)
+    elif token == "@":
+        reader.next()
+        return _list(_symbol("deref"), read_form(reader))
+
+    # list
     elif token == ")":
         raise SyntaxError("unexpected ')'")
+    elif token == "(":
+        return read_list(reader)
+
+    # vector
+    elif token == "]":
+        raise SyntaxError("unexpected ']'")
+    elif token == "[":
+        return read_vector(reader)
+
+    # hash-map
+    elif token == "}":
+        raise SyntaxError("unexpected '}'")
+    elif token == "{":
+        return read_hash_map(reader)
+
+    # atom
     else:
         return read_atom(reader)

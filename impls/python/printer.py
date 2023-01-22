@@ -1,22 +1,37 @@
+from mal_types import _is_atom,_is_false,_is_nil,_is_true,_is_vector,_list,_symbol,_vector,_is_list,_is_string,_is_symbol,_is_keyword,_keyword,_number,_hash_is_map,_u,str_types
+def _escape(s):
+    return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+
 def pr_str(obj, print_readably=True):
-    if isinstance(obj, list):
-        return "(" + " ".join(pr_str(x, print_readably) for x in obj) + ")"
-    elif isinstance(obj, str):
-        if len(obj) > 0 and obj[0] == '\u029e':
+    _r = print_readably
+    if _is_list(obj):
+        return '(' + ' '.join([pr_str(o, _r) for o in obj]) + ')'
+    elif _is_vector(obj):
+        return '[' + ' '.join([pr_str(o, _r) for o in obj]) + ']'
+    elif _hash_is_map(obj):
+        return (
+            '{'
+            + ' '.join(
+                [f'{pr_str(k, _r)} {pr_str(v, _r)}' for k, v in obj.items()]
+            )
+            + '}'
+        )
+    elif type(obj) in str_types:
+        if len(obj) > 0 and obj[0] == _u("\u029e"):
             return f':{obj[1:]}'
         elif print_readably:
-            return '"' + obj.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n') + '"'
-        # elif types._nil_Q(obj):
-        #     return "nil"
-        # elif types._true_Q(obj):
-        #     return "true"
-        # elif types._false_Q(obj):
-        #     return "false"
-        # elif types._atom_Q(obj):
-        #     return "(atom " + _pr_str(obj.val,_r) + ")"
-        # else:
-        #     return obj.__str__()
+            return f'"{_escape(obj)}"'
         else:
             return obj
-        # return obj if print_readably else obj.
-        # return str(obj)
+        
+    elif _is_nil(obj):
+        return 'nil'
+    elif _is_true(obj):
+        return 'true'
+    elif _is_false(obj):
+        return 'false'
+
+    elif _is_atom(obj):
+        return f"(atom {pr_str(obj.val, _r)})"
+    else:
+        return obj.__str__()
