@@ -1,33 +1,55 @@
 import types
 import sys
+
+
 class MalExceptions(Exception):
     def __init__(self, message):
         self.message = message
-        
+
+
 _u = lambda x: x
 _s2u = lambda x: x
 str_types = [str] if sys.version_info[0] >= 3 else [str, unicode]
 
-#Scalars
-def _is_nil(exp):    return exp is None
-def _is_true(exp):   return exp is True
-def _is_false(exp):  return exp is False
+# Scalars
+def _is_nil(exp):
+    return exp is None
+
+
+def _is_true(exp):
+    return exp is True
+
+
+def _is_false(exp):
+    return exp is False
+
+
 def _is_string(exp):
     return len(exp) == 0 if type(exp) in str_types else False
 
-def _number(exp): return type(exp) == int
+
+def _number(exp):
+    return type(exp) == int
 
 
 # Symbols
-class Symbol(str): pass
-def _symbol(str): return Symbol(str)
-def _is_symbol(exp): return type(exp) == Symbol
+class Symbol(str):
+    pass
+
+
+def _symbol(str):
+    return Symbol(str)
+
+
+def _is_symbol(exp):
+    return type(exp) == Symbol
+
 
 # keyword
 def _keyword(string):
     if not string:
         raise MalExceptions("keyword cannot be empty")
-    return _u("\u029e")+string if string[0] !=_u("\u029e") else string
+    return _u("\u029e") + string if string[0] != _u("\u029e") else string
 
 
 # check if its a keyword
@@ -37,13 +59,13 @@ def _is_keyword(string):
 
 class List(list):
     def __add__(self, other):
-        return List(self.list.__add__(other.list))
+        return List(list.__add__(other,list))
 
     def __getitem__(self, key):
-        return self.list[key] if key < len(self) else None
+        return list.__getitem__(self,key) if key < len(self) else None
 
     def __getslice__(self, *a):
-        return List(self.__getslice__(self, *a))
+        return List(list.__getslice__(self, *a))
 
 
 def _list(*vals):
