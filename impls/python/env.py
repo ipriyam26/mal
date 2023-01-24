@@ -5,6 +5,7 @@ class Env:
         
     def set(self,key,value):
         self.data[key]=value
+        return value
         
     def find(self,key):
         if key in self.data:
@@ -15,6 +16,8 @@ class Env:
     def get(self,key):
         result = self.find(key)
         if result is None:
-            raise SyntaxError("Not found", key)
+            raise Exception(f"{key} not found")
         return result.data[key]
+        
+        
         

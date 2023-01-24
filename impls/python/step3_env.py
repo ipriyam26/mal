@@ -23,7 +23,7 @@ def read() -> str:
 
 def eval_ast(ast, repl_env: dict):
     if _is_symbol(ast):
-        repl_env.get(ast)
+        return repl_env.get(ast)
     elif _is_list(ast):
         return [eval(element, repl_env=repl_env) for element in ast]
 
@@ -39,7 +39,7 @@ def eval_ast(ast, repl_env: dict):
         return ast
 
 
-def eval(ast, repl_env: dict) -> str:
+def eval(ast, repl_env: Env) -> str:
     if ast == "history":
         ast = history(True)
     else:
@@ -49,7 +49,8 @@ def eval(ast, repl_env: dict) -> str:
         elif len(ast) == 0:
             return ast
         if ast[0] == "def!":
-            return repl_env.set(ast[1], eval(ast[2], repl_env))
+            res = eval(ast[2], repl_env)
+            return repl_env.set(ast[1], res)
         elif ast[0] == "let*":
             let_env = Env(outer=repl_env)
             for i in range(0, len(ast[1]), 2):
@@ -71,13 +72,7 @@ def print_call(character):
 
 
 def repl():
-    repl_env = Env()
-    res = {
-        "+": lambda a, b: a + b,
-        "-": lambda a, b: a - b,
-        "*": lambda a, b: a * b,
-        "/": lambda a, b: int(a / b),
-    }
+
     for key, value in res.items():
         repl_env.set(key, value)
 
@@ -93,6 +88,13 @@ def history(output: bool = False, character: str = None):
         history_list.append(character)
 
 
+repl_env = Env()
+res = {
+    "+": lambda a, b: a + b,
+    "-": lambda a, b: a - b,
+    "*": lambda a, b: a * b,
+    "/": lambda a, b: int(a / b),
+}
 while True:
     try:
         print("user> ", end="")
