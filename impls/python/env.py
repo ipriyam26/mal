@@ -1,7 +1,14 @@
 class Env:
-    def __init__(self,outer=None) -> None:
+    def __init__(self,outer=None,binds=None,exprs=None) -> None:
         self.data ={}
         self.outer = outer
+        if binds:
+            for i in range(len(binds)):
+                if binds[i] == "&":
+                    self.data[binds[i+1]] = exprs[i:]
+                    break
+                self.data[binds[i]] = exprs[i]
+    
         
     def set(self,key,value):
         self.data[key]=value

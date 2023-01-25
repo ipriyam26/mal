@@ -104,6 +104,7 @@ def _is_vector(exp):
 class HashMap(dict):
     pass
 
+def _nil_Q(exp):    return exp is None
 
 def _hash_map(*args):
     if len(args) % 2 != 0:
@@ -141,3 +142,16 @@ def py_to_mal(obj):
         return HashMap(obj)
     else:
         return
+
+def _function(eval, Env, ast,env,params):
+    def fn(*args):
+        return eval(ast, Env(env, params, List(args)))
+    
+    fn.__meta__ = None
+    fn.__ast__ = ast
+    fn.__get_env__ = lambda args: Env(env, params, args)
+    
+    return fn
+
+def _is_function(exp):
+    return type(exp) == types.FunctionType

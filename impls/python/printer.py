@@ -1,4 +1,4 @@
-from mal_types import _is_atom,_is_false,_is_nil,_is_true,_is_vector,_list,_symbol,_vector,_is_list,_is_string,_is_symbol,_is_keyword,_keyword,_number,_hash_is_map,_u,str_types
+from mal_types import _is_atom,_is_false,_is_nil,_is_true,_is_vector,_list,_symbol,_vector,_is_list,_is_string,_is_symbol,_is_keyword,_keyword,_number,_hash_is_map,_u,str_types, _is_function
 def _escape(s):
     return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
 
@@ -23,7 +23,7 @@ def pr_str(obj, print_readably=True):
             return f'"{_escape(obj)}"'
         else:
             return obj
-        
+
     elif _is_nil(obj):
         return 'nil'
     elif _is_true(obj):
@@ -33,5 +33,7 @@ def pr_str(obj, print_readably=True):
 
     elif _is_atom(obj):
         return f"(atom {pr_str(obj.val, _r)})"
+    elif _is_function(obj):
+        return "#<function>"
     else:
         return obj.__str__()
