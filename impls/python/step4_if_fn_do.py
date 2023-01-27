@@ -63,13 +63,11 @@ def eval(ast, repl_env: Env) -> str:
         elif ast[0] == "do":
             return eval_ast(ast[1:], repl_env)[-1]
         elif ast[0] == "if":
-            if eval(ast[1], repl_env) not in [False, None]:
-                return eval_ast(ast[2], repl_env)
-            elif len(ast) <= 3:
-                return None
-            else:
-                return eval_ast(ast[3], repl_env)
+            res = eval(ast[1], repl_env)
+            if res is not None and res is not False:
+                return eval(ast[2], repl_env)
 
+            return None if len(ast) <= 3 else eval(ast[3], repl_env)
         elif ast[0] == "fn*":
             return _function(eval, Env, ast[2], repl_env, ast[1])
         else:

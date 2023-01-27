@@ -62,6 +62,7 @@ class List(list):
         return List(list.__add__(other,list))
 
     def __getitem__(self, key):
+        if type(key) == slice: return List(list.__getitem__(self, key))
         return list.__getitem__(self,key) if key < len(self) else None
 
     def __getslice__(self, *a):

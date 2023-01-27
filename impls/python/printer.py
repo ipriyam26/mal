@@ -33,7 +33,5 @@ def pr_str(obj, print_readably=True):
 
     elif _is_atom(obj):
         return f"(atom {pr_str(obj.val, _r)})"
-    elif _is_function(obj):
-        return "#<function>"
     else:
         return obj.__str__()
