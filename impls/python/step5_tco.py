@@ -44,47 +44,49 @@ def eval_ast(ast, repl_env: dict):
 
 
 def eval(ast, repl_env: Env) -> str:
-    if ast == "history":
-        ast = history(True)
-    else:
-        history(character=ast)
-        if not _is_list(ast):
-            return eval_ast(ast, repl_env)
-        elif len(ast) == 0:
-            return ast
-        if ast[0] == "def!":
-            res = eval(ast[2], repl_env)
-            return repl_env.set(ast[1], res)
-        elif ast[0] == "let*":
-            let_env = Env(outer=repl_env)
-            for i in range(0, len(ast[1]), 2):
-                let_env.set(ast[1][i], eval(ast[1][i + 1], let_env))
-            ast = ast[2]
-            repl_env = let_env
-        elif ast[0] == "do":
-            eval_ast(ast[1:-1], repl_env)
-            ast = ast[-1]
-        elif ast[0] == "if":
-            res = eval(ast[1], repl_env)
-            if res is not None and res is not False:
-                ast = ast[2]
 
-            elif len(ast) <= 3:
-                ast = None
+    while True:
+        if ast != "history":
+            history(character=ast)
+            if not _is_list(ast):
+                return eval_ast(ast, repl_env)
+            elif len(ast) == 0:
+                return ast
+            ast0 = ast[0]
+            if ast0 == "def!":
+                res = eval(ast[2], repl_env)
+                return repl_env.set(ast[1], res)
+            elif ast0 == "do":
+                eval_ast(ast[1:-1], repl_env)
+                ast = ast[-1]
+            elif ast0 == "fn*":
+                return _function(eval, Env, ast[2], repl_env, ast[1])
+            elif ast0 == "if":
+                res = eval(ast[1], repl_env)
+                if res is not None and res is not False:
+                    ast = ast[2]
+
+                elif len(ast) <= 3:
+                    ast = None
+                else:
+                    ast = ast[3]
+
+            elif ast0 == "let*":
+                let_env = Env(outer=repl_env)
+                for i in range(0, len(ast[1]), 2):
+                    let_env.set(ast[1][i], eval(ast[1][i + 1], let_env))
+                ast = ast[2]
+                repl_env = let_env
             else:
-                ast = ast[3]
-                
-        elif ast[0] == "fn*":
-            return _function(eval, Env, ast[2], repl_env, ast[1])
+                result = eval_ast(ast, repl_env)
+                fnc = result[0]
+                if hasattr(fnc, "__ast__"):
+                    ast = fnc.__ast__ 
+                    repl_env = fnc.__get_env__(result[1:])
+                else:
+                    return fnc(*result[1:])
         else:
-            result = eval_ast(ast, repl_env)
-            fnc = result[0]
-            if hasattr(fnc, "__ast__"):
-                ast = fnc.__ast__ 
-                repl_env = fnc.__gen_env__(result[1:])
-            else:
-                return fnc(*result[1:])
-                
+            ast = history(output=True)        
 
 
 def print_call(character):
