@@ -1,8 +1,11 @@
 import time
 import printer
 import mal_types
+import reader
 
 ns = {
+    "read-string": reader.read_str,
+    "slurp": lambda filename: open(filename).read(),
     "pr-str": lambda *args: " ".join(
         [printer.pr_str(arg, print_readably=True) for arg in args]
     ),
