@@ -23,7 +23,7 @@ ns = {
     "<=": lambda a, b: a <= b,
     ">": lambda a, b: a > b,
     ">=": lambda a, b: a >= b,
-    "+": lambda a, b: a + b,
+"+": lambda a, b: a + b,
     "-": lambda a, b: a - b,
     "*": lambda a, b: a * b,
     "/": lambda a, b: int(a / b),
@@ -38,4 +38,9 @@ ns = {
     "atom?": mal_types._is_atom,
     "empty?": lambda a: len(a) == 0,
     "count": lambda a: 0 if mal_types._is_nil(a) else len(a),
+    "deref": lambda a: a.val,
+    "refer!": lambda a, b: a.set(b),
+    "swap!": lambda a, b, *c: a.swap(b, *c),
+    "@": lambda a: a.val,
+
 }

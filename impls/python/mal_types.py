@@ -124,9 +124,16 @@ def _hash_is_map(exp):
 class Atom(object):
     def __init__(self, val):
         self.val = val
+    
+    def set(self, val):
+        self.val = val
+        return self.val
 
+    def swap(self,func,*args):
+        self.val = func(self.val,*args)
+        return self.val
 
-def _atom(val):
+def _atom(val):  # sourcery skip: instance-method-first-arg-name
     return Atom(val)
 
 

@@ -11,6 +11,7 @@ from mal_types import (
     HashMap,
     _function,
     _symbol,
+    _list,
 )
 from env import Env
 import reader
@@ -114,20 +115,16 @@ for key, value in ns.items():
     repl_env.set(_symbol(key), value)
 
 repl_env.set(_symbol("eval"), lambda ast: eval(ast, repl_env))
+repl_env.set(_symbol("*ARGV*"), _list(*sys.argv[2:]))
 repl("(def! not (fn* (a) (if a false true)))")
-repl(
-    "(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\nnil)\")))))"
-)
-
+repl('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))')
+if len(sys.argv) >= 2:
+    repl(f'(load-file "{sys.argv[1]}")')
+    sys.exit(0)
 while True:
     try:
         print("user> ", end="")
         str_input = input()
-        # if str_input == "exit":
-        #     break
-        # if str_input == "":
-        #     continue
-
         repl(str_input=str_input)
     except Exception as e:
         print("".join(traceback.format_exception(*sys.exc_info())))
