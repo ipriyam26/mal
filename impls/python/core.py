@@ -42,5 +42,5 @@ ns = {
     "refer!": lambda a, b: a.set(b),
     "swap!": lambda a, b, *c: a.swap(b, *c),
     "@": lambda a: a.val,
-
+"reset!": lambda a, b: a.reset(b),
 }

@@ -132,6 +132,10 @@ class Atom(object):
     def swap(self,func,*args):
         self.val = func(self.val,*args)
         return self.val
+    
+    def reset(self,val):
+        self.val = val
+        return self.val
 
 def _atom(val):  # sourcery skip: instance-method-first-arg-name
     return Atom(val)
