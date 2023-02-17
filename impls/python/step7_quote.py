@@ -1,0 +1,154 @@
+import functools
+import sys
+from core import ns
+import traceback
+from mal_types import (
+    _is_symbol,
+    _is_list,
+    _is_vector,
+    _hash_is_map,
+    _vector,
+    _hash_map,
+    HashMap,
+    _function,
+    _symbol,
+    _list,
+)
+from env import Env
+import reader
+import printer
+
+
+history_list = []
+
+def loop(acc, elt):
+    if _is_list(elt) and len(elt) == 2 and elt[0] == _symbol("splice-unquote"):
+        return _list(_symbol("concat"), elt[1], acc)
+    else:
+        return _list(_symbol("cons"), quasiquote(elt), acc)
+    
+def foldr(seq):
+    return functools.reduce(loop, reversed(seq), _list())
+
+def quasiquote(ast):
+    if _is_list(ast):
+        return ast[1] if len(ast)==2 and  ast[0]==_symbol("unquote") else foldr(ast)
+    elif _is_vector(ast):
+        return _list(_symbol("vec"),foldr(ast))
+    elif _hash_is_map(ast):
+        return _list(_symbol("quote"), ast )
+    
+
+
+def read(str_input) -> str:
+
+    return reader.read_str(str_input)
+
+
+def eval_ast(ast, repl_env: dict):
+    if _is_symbol(ast):
+        return repl_env.get(ast)
+    elif _is_list(ast):
+        return [eval(element, repl_env=repl_env) for element in ast]
+
+    elif _is_vector(ast):
+        return _vector(*[eval(element, repl_env=repl_env) for element in ast])
+    elif _hash_is_map(ast):
+        ast: HashMap = ast
+        result = []
+        for key, value in ast.items():
+            result.extend([key, eval(value, repl_env=repl_env)])
+        return _hash_map(*result)
+    else:
+        return ast
+
+
+def eval(ast, repl_env: Env) -> str:
+
+    while True:
+        if ast != "history":
+            history(character=ast)
+            if not _is_list(ast):
+                return eval_ast(ast, repl_env)
+            elif len(ast) == 0:
+                return ast
+            ast0 = ast[0]
+            if ast0 == "def!":
+                res = eval(ast[2], repl_env)
+                return repl_env.set(ast[1], res)
+            elif ast0 == "do":
+                eval_ast(ast[1:-1], repl_env)
+                ast = ast[-1]
+            elif ast0 == "fn*":
+                return _function(eval, Env, ast[2], repl_env, ast[1])
+            elif ast0 == "if":
+                res = eval(ast[1], repl_env)
+                if res is not None and res is not False:
+                    ast = ast[2]
+
+                elif len(ast) <= 3:
+                    ast = None
+                else:
+                    ast = ast[3]
+
+            elif ast0 == "let*":
+                let_env = Env(outer=repl_env)
+                for i in range(0, len(ast[1]), 2):
+                    let_env.set(ast[1][i], eval(ast[1][i + 1], let_env))
+                ast = ast[2]
+                repl_env = let_env
+            elif ast0 == "quasiquote":
+                ast= quasiquote(ast[1])
+            elif ast0 == "quasiquoteexpand":
+                return quasiquote(ast[1])
+            elif ast0 == "quote":
+                return ast[1]
+            else:
+                result = eval_ast(ast, repl_env)
+                fnc = result[0]
+                if not hasattr(fnc, "__ast__"):
+                    return fnc(*result[1:])
+                ast = fnc.__ast__
+                repl_env = fnc.__get_env__(result[1:])
+        else:
+            ast = history(output=True)
+
+
+def print_call(character):
+    print(printer.pr_str(character, print_readably=True))
+
+
+def repl(str_input: str):
+
+    character = read(str_input)
+    character = eval(character, repl_env)
+    print_call(character=character)
+
+
+def history(output: bool = False, character: str = None):
+    if output:
+        return "\n".join(history_list)
+    else:
+        history_list.append(character)
+
+
+repl_env = Env()
+
+
+for key, value in ns.items():
+    repl_env.set(_symbol(key), value)
+
+repl_env.set(_symbol("eval"), lambda ast: eval(ast, repl_env))
+repl_env.set(_symbol("*ARGV*"), _list(*sys.argv[2:]))
+repl("(def! not (fn* (a) (if a false true)))")
+repl('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))')
+if len(sys.argv) >= 2:
+    repl(f'(load-file "{sys.argv[1]}")')
+    sys.exit(0)
+while True:
+    try:
+        print("user> ", end="")
+        str_input = input()
+        repl(str_input=str_input)
+    except Exception as e:
+        print("".join(traceback.format_exception(*sys.exc_info())))

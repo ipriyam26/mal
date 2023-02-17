@@ -43,4 +43,7 @@ ns = {
     "swap!": lambda a, b, *c: a.swap(b, *c),
     "@": lambda a: a.val,
 "reset!": lambda a, b: a.reset(b),
+"cons": lambda a, b: mal_types._list(a, *b),
+"concat": lambda *a: mal_types._list(*[item for sublist in a for item in sublist]),
+"vec": lambda a: mal_types._vector(*a),
 }
